@@ -1,0 +1,32 @@
+[
+    {
+      "id": 1,
+      "name": "Tax Planning & Compliance",
+      "description": "Strategic tax planning, preparation, and filing services for individuals and corporations to ensure full regulatory compliance."
+    },
+    {
+      "id": 2,
+      "name": "Audit & Assurance",
+      "description": "Comprehensive statutory and internal audits that provide stakeholders with a clear, accurate picture of financial health."
+    },
+    {
+      "id": 3,
+      "name": "Business Incorporation",
+      "description": "End-to-end assistance with registering new companies, LLPs, and partnerships, including all foundational legal documentation."
+    },
+    {
+      "id": 4,
+      "name": "GST Advisory & Filing",
+      "description": "Monthly and annual GST return filings, reconciliation, and expert advisory on complex indirect tax matters."
+    },
+    {
+      "id": 5,
+      "name": "Financial Advisory",
+      "description": "Expert guidance on mergers, acquisitions, risk management, and capital structuring to fuel your business growth."
+    },
+    {
+      "id": 6,
+      "name": "Bookkeeping & Outsourcing",
+      "description": "Accurate, day-to-day management of financial records, payroll processing, and management information system (MIS) reporting."
+    }
+  ]
