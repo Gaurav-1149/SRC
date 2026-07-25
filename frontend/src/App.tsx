@@ -9,15 +9,6 @@ import Insight from './pages/Insight';
 import Article from './pages/Article';
 import Admin from './pages/Admin';
 
-// A temporary component to show when navigating to pages that aren't built yet
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="text-center">
-      <h1 className="text-3xl md:text-4xl font-bold text-slate-300 mb-4">{title}</h1>
-      <p className="text-slate-500">This page is currently under construction.</p>
-    </div>
-  </div>
-);
 
 export default function App() {
   return (
