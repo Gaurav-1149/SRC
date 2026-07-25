@@ -23,7 +23,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 // Contact form endpoint
-app.post('/api/contact', async (req: Request, res: Response): Promise => {
+app.post('/api/contact', async (req: Request, res: Response) => {
   try {
     const { name, company, mobile, email, comment } = req.body;
 
