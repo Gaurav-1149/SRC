@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 interface InsightPost {
   _id: string;
@@ -45,7 +46,7 @@ export default function Admin() {
   const fetchInsights = async () => {
     setLoadingInsights(true);
     try {
-      const response = await fetch('http://localhost:3000/api/insights');
+      const response = await fetch(`${API_BASE_URL}/api/insights`);
       const data = await response.json();
       setExistingInsights(data);
     } catch (error) {
@@ -60,7 +61,7 @@ export default function Admin() {
     setLoginError('');
     
     try {
-      const response = await fetch('http://localhost:3000/api/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -82,7 +83,7 @@ export default function Admin() {
     setPostStatus('loading');
 
     try {
-      const response = await fetch('http://localhost:3000/api/insights', {
+      const response = await fetch(`${API_BASE_URL}/api/insights`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postData),
@@ -108,7 +109,7 @@ export default function Admin() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/insights/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/insights/${id}`, {
         method: 'DELETE',
       });
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -22,8 +23,7 @@ export default function Contact() {
     setErrorMessage('');
 
     try {
-      // Connects to the Express backend you set up on port 3000
-      const response = await fetch('https://src-backend-pq5m.onrender.com/api/contact', {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

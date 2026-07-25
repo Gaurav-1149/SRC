@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 // TypeScript interface matching the backend schema
 interface InsightPost {
@@ -21,7 +22,7 @@ export default function Article() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/insights/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/insights/${id}`);
         if (!response.ok) {
           throw new Error('Article not found');
         }

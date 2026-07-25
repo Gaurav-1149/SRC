@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Added Link for routing
+import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 // TypeScript interface matching the backend schema
 interface InsightPost {
@@ -22,7 +23,7 @@ export default function Insight() {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const response = await fetch('https://src-backend-pq5m.onrender.com/api/insights');
+        const response = await fetch(`${API_BASE_URL}/api/insights`);
         const data = await response.json();
         setInsights(data);
       } catch (error) {

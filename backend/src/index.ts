@@ -1,7 +1,3 @@
-import dns from 'dns';
-// Force IPv4 before ANY other module loads
-dns.setDefaultResultOrder('ipv4first');
-
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';

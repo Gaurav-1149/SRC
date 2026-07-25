@@ -1,10 +1,8 @@
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-// Initialize the API client
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface ContactFormData {
   name: string;
@@ -15,43 +13,100 @@ export interface ContactFormData {
 }
 
 export const sendContactEmails = async (data: ContactFormData) => {
-  const caEmail = process.env.EMAIL_USER as string;
+  const resendApiKey = process.env.RESEND_API_KEY;
 
-  // 1. Email to the CA Firm (You)
+  // Option 1: Resend HTTP API (Recommended for Render cloud deployment)
+  if (resendApiKey) {
+    const resend = new Resend(resendApiKey);
+    const caEmail = process.env.EMAIL_USER || 'advisory@nebulacactus.com';
+
+    await Promise.all([
+      resend.emails.send({
+        from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
+        to: [caEmail],
+        replyTo: data.email,
+        subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
+        html: `
+          <h2>New Contact Form Submission</h2>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Company:</strong> ${data.company || 'Not provided'}</p>
+          <p><strong>Mobile:</strong> ${data.mobile}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Message:</strong></p>
+          <p>${data.comment}</p>
+        `,
+      }),
+      resend.emails.send({
+        from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
+        to: [data.email],
+        subject: 'Thank you for contacting NebulaCactus CA Firm',
+        html: `
+          <p>Dear ${data.name},</p>
+          <p>Thank you for reaching out. We have received your message and a member of our team will get back to you shortly.</p>
+          <p>For your records, here is a copy of your message:</p>
+          <blockquote>${data.comment}</blockquote>
+          <br/>
+          <p>Best Regards,<br/>NebulaCactus CA Firm</p>
+        `,
+      })
+    ]);
+    return;
+  }
+
+  // Option 2: Gmail SMTP with Nodemailer
+  const user = process.env.EMAIL_USER;
+  // Remove all spaces from App Password (e.g. "yyax yqin ufnt wejw" -> "yyaxyqinufntwejw")
+  const pass = process.env.EMAIL_PASS?.replace(/\s+/g, '');
+
+  if (!user || !pass) {
+    throw new Error('Email configuration error: EMAIL_USER and EMAIL_PASS (or RESEND_API_KEY) must be set in Render environment variables.');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user,
+      pass,
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+
   const mailToCA = {
-    from: 'onboarding@resend.dev', // Resend's default free testing domain
-    to: caEmail, // MUST be the email address you use to sign up for Resend
+    from: user,
+    to: user,
     replyTo: data.email,
     subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
     html: `
-      New Contact Form Submission
-      Name: ${data.name}
-      Company: ${data.company || 'Not provided'}
-      Mobile: ${data.mobile}
-      Email: ${data.email}
-      Message:${data.comment}
+      <h2>New Contact Form Submission</h2>
+      <p><strong>Name:</strong> ${data.name}</p>
+      <p><strong>Company:</strong> ${data.company || 'Not provided'}</p>
+      <p><strong>Mobile:</strong> ${data.mobile}</p>
+      <p><strong>Email:</strong> ${data.email}</p>
+      <p><strong>Message:</strong></p>
+      <p>${data.comment}</p>
     `,
   };
 
-  // 2. Auto-reply to the Client (See important note below)
   const mailToClient = {
-    from: 'onboarding@resend.dev', // You must change this to a verified domain later
+    from: user,
     to: data.email,
     subject: 'Thank you for contacting NebulaCactus CA Firm',
     html: `
-      Dear ${data.name},
-      Thank you for reaching out. We have received your message and will get back to you shortly.
+      <p>Dear ${data.name},</p>
+      <p>Thank you for reaching out. We have received your message and a member of our team will get back to you shortly.</p>
+      <p>For your records, here is a copy of your message:</p>
+      <blockquote>${data.comment}</blockquote>
+      <br/>
+      <p>Best Regards,<br/>NebulaCactus CA Firm</p>
     `,
   };
 
-  // Send both emails concurrently
-  const [caResult] = await Promise.all([
-    resend.emails.send(mailToCA),
-    // resend.emails.send(mailToClient) // UNCOMMENT THIS LATER
+  await Promise.all([
+    transporter.sendMail(mailToCA),
+    transporter.sendMail(mailToClient)
   ]);
-
-  // Resend returns an error object if it fails, so we throw it to trigger your catch block
-  if (caResult.error) {
-    throw new Error(caResult.error.message);
-  }
 };
