@@ -23,7 +23,7 @@ export default function Contact() {
 
     try {
       // Connects to the Express backend you set up on port 3000
-      const response = await fetch('http://localhost:3000/api/contact', {
+      const response = await fetch('https://src-backend-pq5m.onrender.com/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
