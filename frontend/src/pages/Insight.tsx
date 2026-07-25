@@ -22,7 +22,7 @@ export default function Insight() {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/insights');
+        const response = await fetch('https://src-backend-pq5m.onrender.com/api/insights');
         const data = await response.json();
         setInsights(data);
       } catch (error) {
