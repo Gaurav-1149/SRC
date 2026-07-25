@@ -45,7 +45,7 @@ export const sendContactEmails = async (data: ContactFormData) => {
   };
 
   // Send both emails concurrently
-  const [caResult, clientResult] = await Promise.all([
+  const [caResult] = await Promise.all([
     resend.emails.send(mailToCA),
     // resend.emails.send(mailToClient) // UNCOMMENT THIS LATER
   ]);
