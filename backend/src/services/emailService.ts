@@ -13,8 +13,8 @@ export interface ContactFormData {
 
 export const sendContactEmails = async (data: ContactFormData) => {
   const resendApiKey = process.env.RESEND_API_KEY;
-  // Resend free testing mode requires sending to the email address registered with the Resend API Key (gauravgarg9595@gmail.com)
-  const caEmail = process.env.EMAIL_USER || 'gauravgarg9595@gmail.com';
+  // Always send lead notifications to gauravtcbd8@gmail.com
+  const caEmail = process.env.EMAIL_USER || 'gauravtcbd8@gmail.com';
 
   if (!resendApiKey) {
     throw new Error('RESEND_API_KEY is not configured in environment variables.');
@@ -22,7 +22,7 @@ export const sendContactEmails = async (data: ContactFormData) => {
 
   const resend = new Resend(resendApiKey);
 
-  // 1. Send form lead data to the verified Resend account owner email (gauravgarg9595@gmail.com)
+  // 1. Send form lead data to gauravtcbd8@gmail.com
   const leadResult = await resend.emails.send({
     from: 'NebulaCactus Leads <onboarding@resend.dev>',
     to: [caEmail],
