@@ -1,15 +1,17 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import dns from 'dns';
 
-
 dns.setDefaultResultOrder('ipv4first');
+
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
 // Create the Transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // true for port 465
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
