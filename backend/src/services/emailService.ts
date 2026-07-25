@@ -1,8 +1,5 @@
-import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
-import dns from 'dns';
 
 dotenv.config();
 
@@ -16,115 +13,46 @@ export interface ContactFormData {
 
 export const sendContactEmails = async (data: ContactFormData) => {
   const resendApiKey = process.env.RESEND_API_KEY;
+  const caEmail = process.env.EMAIL_USER || 'gauravtcbd8@gmail.com';
 
-  // Option 1: Resend HTTP API (100% Reliable for Cloud Deployments like Render)
-  if (resendApiKey) {
-    const resend = new Resend(resendApiKey);
-    const caEmail = process.env.EMAIL_USER || 'advisory@nebulacactus.com';
-
-    await Promise.all([
-      resend.emails.send({
-        from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
-        to: [caEmail],
-        replyTo: data.email,
-        subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
-        html: `
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${data.name}</p>
-          <p><strong>Company:</strong> ${data.company || 'Not provided'}</p>
-          <p><strong>Mobile:</strong> ${data.mobile}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Message:</strong></p>
-          <p>${data.comment}</p>
-        `,
-      }),
-      resend.emails.send({
-        from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
-        to: [data.email],
-        subject: 'Thank you for contacting NebulaCactus CA Firm',
-        html: `
-          <p>Dear ${data.name},</p>
-          <p>Thank you for reaching out. We have received your message and a member of our team will get back to you shortly.</p>
-          <p>For your records, here is a copy of your message:</p>
-          <blockquote>${data.comment}</blockquote>
-          <br/>
-          <p>Best Regards,<br/>NebulaCactus CA Firm</p>
-        `,
-      })
-    ]);
-    return;
+  if (!resendApiKey) {
+    throw new Error('RESEND_API_KEY is not configured in environment variables.');
   }
 
-  // Option 2: Gmail SMTP with Explicit IPv4 Resolution
-  const user = process.env.EMAIL_USER || '';
-  const rawPass = process.env.EMAIL_PASS || '';
+  const resend = new Resend(resendApiKey);
 
-  if (!user || !rawPass) {
-    throw new Error('Email configuration error: EMAIL_USER and EMAIL_PASS (or RESEND_API_KEY) must be set in Render environment variables.');
-  }
-
-  const senderEmail = user;
-  const senderPass = rawPass.replace(/\s+/g, '');
-
-  // Manually resolve IPv4 address for smtp.gmail.com to prevent Render IPv6 ENETUNREACH errors
-  let targetHost = 'smtp.gmail.com';
-  try {
-    const addresses = await dns.promises.resolve4('smtp.gmail.com');
-    if (addresses && addresses[0]) {
-      targetHost = addresses[0]; // Explicit IPv4 IP string (e.g. '142.251.10.108')
-    }
-  } catch (err) {
-    console.warn('IPv4 DNS resolution warning, using default hostname:', err);
-  }
-
-  const smtpOptions: SMTPTransport.Options = {
-    host: targetHost,
-    port: 465,
-    secure: true,
-    auth: {
-      user: senderEmail,
-      pass: senderPass,
-    },
-    tls: {
-      servername: 'smtp.gmail.com', // Ensures SSL certificate validation matches Gmail
-      rejectUnauthorized: false
-    }
-  };
-
-  const transporter = nodemailer.createTransport(smtpOptions);
-
-  const mailToCA = {
-    from: senderEmail,
-    to: senderEmail,
-    replyTo: data.email,
-    subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
-    html: `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${data.name}</p>
-      <p><strong>Company:</strong> ${data.company || 'Not provided'}</p>
-      <p><strong>Mobile:</strong> ${data.mobile}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      <p><strong>Message:</strong></p>
-      <p>${data.comment}</p>
-    `,
-  };
-
-  const mailToClient = {
-    from: senderEmail,
-    to: data.email,
-    subject: 'Thank you for contacting NebulaCactus CA Firm',
-    html: `
-      <p>Dear ${data.name},</p>
-      <p>Thank you for reaching out. We have received your message and a member of our team will get back to you shortly.</p>
-      <p>For your records, here is a copy of your message:</p>
-      <blockquote>${data.comment}</blockquote>
-      <br/>
-      <p>Best Regards,<br/>NebulaCactus CA Firm</p>
-    `,
-  };
-
+  // Send lead notification to Gaurav (gauravtcbd8@gmail.com) and confirmation auto-reply to client simultaneously
   await Promise.all([
-    transporter.sendMail(mailToCA),
-    transporter.sendMail(mailToClient)
+    // 1. Email to CA Firm (Gaurav)
+    resend.emails.send({
+      from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
+      to: [caEmail],
+      replyTo: data.email,
+      subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${data.name}</p>
+        <p><strong>Company:</strong> ${data.company || 'Not provided'}</p>
+        <p><strong>Mobile:</strong> ${data.mobile}</p>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${data.comment}</p>
+      `,
+    }),
+    // 2. Auto-reply to Client
+    resend.emails.send({
+      from: 'NebulaCactus CA Firm <onboarding@resend.dev>',
+      to: [data.email],
+      replyTo: caEmail, // When client hits reply, it goes directly to gauravtcbd8@gmail.com
+      subject: 'Thank you for contacting NebulaCactus CA Firm',
+      html: `
+        <p>Dear ${data.name},</p>
+        <p>Thank you for reaching out to NebulaCactus CA Firm. We have received your message and a member of our team will get back to you shortly.</p>
+        <p>For your records, here is a copy of your message:</p>
+        <blockquote style="background: #f9f9f9; padding: 12px; border-left: 4px solid #0070f3;">${data.comment}</blockquote>
+        <br/>
+        <p>Best Regards,<br/>NebulaCactus CA Firm</p>
+      `,
+    })
   ]);
 };
