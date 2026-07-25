@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
 
@@ -53,16 +55,15 @@ export const sendContactEmails = async (data: ContactFormData) => {
     return;
   }
 
-  // Option 2: Gmail SMTP with Nodemailer
+  // Option 2: Gmail SMTP with Nodemailer (Forced IPv4 to fix Render ENETUNREACH IPv6 error)
   const user = process.env.EMAIL_USER;
-  // Remove all spaces from App Password (e.g. "yyax yqin ufnt wejw" -> "yyaxyqinufntwejw")
   const pass = process.env.EMAIL_PASS?.replace(/\s+/g, '');
 
   if (!user || !pass) {
     throw new Error('Email configuration error: EMAIL_USER and EMAIL_PASS (or RESEND_API_KEY) must be set in Render environment variables.');
   }
 
-  const transporter = nodemailer.createTransport({
+  const smtpOptions: SMTPTransport.Options = {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
@@ -73,7 +74,16 @@ export const sendContactEmails = async (data: ContactFormData) => {
     tls: {
       rejectUnauthorized: false
     }
-  });
+  };
+
+  // Force Node.js DNS resolver to resolve IPv4 addresses ONLY (family: 4)
+  // This prevents ENETUNREACH 2404:6800:4003:... IPv6 errors in Render containers
+  (smtpOptions as any).family = 4;
+  (smtpOptions as any).lookup = (hostname: string, options: any, callback: any) => {
+    return dns.lookup(hostname, { family: 4 }, callback);
+  };
+
+  const transporter = nodemailer.createTransport(smtpOptions);
 
   const mailToCA = {
     from: user,
