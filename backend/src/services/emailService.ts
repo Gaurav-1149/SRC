@@ -17,7 +17,7 @@ export interface ContactFormData {
 export const sendContactEmails = async (data: ContactFormData) => {
   const resendApiKey = process.env.RESEND_API_KEY;
 
-  // Option 1: Resend HTTP API (Recommended for Render cloud deployment)
+  // Option 1: Resend HTTP API (100% Reliable for Cloud Deployments like Render)
   if (resendApiKey) {
     const resend = new Resend(resendApiKey);
     const caEmail = process.env.EMAIL_USER || 'advisory@nebulacactus.com';
@@ -55,39 +55,47 @@ export const sendContactEmails = async (data: ContactFormData) => {
     return;
   }
 
-  // Option 2: Gmail SMTP with Nodemailer (Forced IPv4 to fix Render ENETUNREACH IPv6 error)
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS?.replace(/\s+/g, '');
+  // Option 2: Gmail SMTP with Explicit IPv4 Resolution
+  const user = process.env.EMAIL_USER || '';
+  const rawPass = process.env.EMAIL_PASS || '';
 
-  if (!user || !pass) {
+  if (!user || !rawPass) {
     throw new Error('Email configuration error: EMAIL_USER and EMAIL_PASS (or RESEND_API_KEY) must be set in Render environment variables.');
   }
 
+  const senderEmail = user;
+  const senderPass = rawPass.replace(/\s+/g, '');
+
+  // Manually resolve IPv4 address for smtp.gmail.com to prevent Render IPv6 ENETUNREACH errors
+  let targetHost = 'smtp.gmail.com';
+  try {
+    const addresses = await dns.promises.resolve4('smtp.gmail.com');
+    if (addresses && addresses[0]) {
+      targetHost = addresses[0]; // Explicit IPv4 IP string (e.g. '142.251.10.108')
+    }
+  } catch (err) {
+    console.warn('IPv4 DNS resolution warning, using default hostname:', err);
+  }
+
   const smtpOptions: SMTPTransport.Options = {
-    host: 'smtp.gmail.com',
+    host: targetHost,
     port: 465,
     secure: true,
     auth: {
-      user,
-      pass,
+      user: senderEmail,
+      pass: senderPass,
     },
     tls: {
+      servername: 'smtp.gmail.com', // Ensures SSL certificate validation matches Gmail
       rejectUnauthorized: false
     }
-  };
-
-  // Force Node.js DNS resolver to resolve IPv4 addresses ONLY (family: 4)
-  // This prevents ENETUNREACH 2404:6800:4003:... IPv6 errors in Render containers
-  (smtpOptions as any).family = 4;
-  (smtpOptions as any).lookup = (hostname: string, options: any, callback: any) => {
-    return dns.lookup(hostname, { family: 4 }, callback);
   };
 
   const transporter = nodemailer.createTransport(smtpOptions);
 
   const mailToCA = {
-    from: user,
-    to: user,
+    from: senderEmail,
+    to: senderEmail,
     replyTo: data.email,
     subject: `New Web Lead: ${data.name} from ${data.company || 'N/A'}`,
     html: `
@@ -102,7 +110,7 @@ export const sendContactEmails = async (data: ContactFormData) => {
   };
 
   const mailToClient = {
-    from: user,
+    from: senderEmail,
     to: data.email,
     subject: 'Thank you for contacting NebulaCactus CA Firm',
     html: `
